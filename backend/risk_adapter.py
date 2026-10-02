@@ -21,18 +21,27 @@ SIGNALS = [
 ]
 
 
+def num(value, default=0.0):
+    """Turn a value into a number; anything unusable becomes the default."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
 def events_to_flags(events):
     flags = {name: False for name, _, _ in SIGNALS}
 
     typing = [e for e in events if e["type"] == "typing"]
     if typing:
         d = typing[-1]["data"]
-        base = d.get("baseline_cpm") or 1
-        dev = abs(d.get("speed_cpm", base) - base) / base
+        base = num(d.get("baseline_cpm"), 0) or 1
+        speed = num(d.get("speed_cpm"), base)
+        dev = abs(speed - base) / base
         flags["typing_speed_changed"] = dev >= TYPING_DEVIATION
 
     flags["mouse_anomaly"] = any(
-        e["type"] == "mouse" and e["data"].get("straightness", 0) > STRAIGHTNESS_LIMIT
+        e["type"] == "mouse" and num(e["data"].get("straightness"), 0) > STRAIGHTNESS_LIMIT
         for e in events
     )
 

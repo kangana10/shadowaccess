@@ -86,4 +86,13 @@ def test_attack_locks_five_times_in_a_row(client):
     for _ in range(5):
         sid = login(client)
         r = client.post("/simulate-attack", json={"session_id": sid})
-        assert r.json()["risk"]["locked"] is True
+        assert r.json()["risk"]["locked"] is True    
+
+
+def test_bad_values_do_not_crash(client):
+    sid = login(client)
+    r = send(client, sid, "typing", {"speed_cpm": "fast", "baseline_cpm": "abc"})
+    assert r.status_code == 200
+    r = send(client, sid, "mouse", {"straightness": "very"})
+    assert r.status_code == 200
+    assert client.get(f"/risk/{sid}").status_code == 200
